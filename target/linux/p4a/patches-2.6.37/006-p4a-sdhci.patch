@@ -1,0 +1,29 @@
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -140,6 +140,16 @@ config MMC_SDHCI_ESDHC_IMX
+ 
+ 	  If unsure, say N.
+ 
++config MMC_SDHCI_P4A
++	tristate "SDHCI support on P4A"
++	depends on ARCH_P4A
++	select MMC_SDHCI
++	select MMC_SDHCI_IO_ACCESSORS
++	help
++	  This selects the SDHCI support for Innofidei P4A SOC devices.
++
++	  If unsure, say N.
++
+ config MMC_SDHCI_S3C
+ 	tristate "SDHCI support on Samsung S3C SoC"
+ 	depends on MMC_SDHCI && PLAT_SAMSUNG
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_MMC_IMX)		+= imxmmc.o
+ obj-$(CONFIG_MMC_MXC)		+= mxcmmc.o
+ obj-$(CONFIG_MMC_SDHCI)		+= sdhci.o
+ obj-$(CONFIG_MMC_SDHCI_PCI)	+= sdhci-pci.o
++obj-$(CONFIG_MMC_SDHCI_P4A)	+= sdhci-p4a.o
+ obj-$(CONFIG_MMC_SDHCI_PXA)	+= sdhci-pxa.o
+ obj-$(CONFIG_MMC_SDHCI_S3C)	+= sdhci-s3c.o
+ obj-$(CONFIG_MMC_SDHCI_SPEAR)	+= sdhci-spear.o

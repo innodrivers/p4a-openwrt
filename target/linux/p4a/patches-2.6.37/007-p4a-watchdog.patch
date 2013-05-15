@@ -1,0 +1,53 @@
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -28,6 +28,14 @@ menuconfig WATCHDOG
+ 
+ if WATCHDOG
+ 
++config WATCHDOG_CORE
++	bool "WatchDog Timer Driver Core"
++	---help---
++	  Say Y here if you want to use the new watchdog timer driver core.
++	  This driver provides a framework for all watchdog timer drivers
++	  and gives them the /dev/watchdog interface (and later also the
++	  sysfs interface).
++
+ config WATCHDOG_NOWAYOUT
+ 	bool "Disable watchdog shutdown on close"
+ 	help
+@@ -331,6 +339,14 @@ config IMX2_WDT
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called imx2_wdt.
+ 
++config P4A_WATCHDOG
++	tristate "P4A watchdog"
++	depends on ARCH_P4A
++	select WATCHDOG_CORE
++	help
++	  Say Y here if to include support for the watchdog timer
++	  for the innofidei P4A chip.
++
+ # AVR32 Architecture
+ 
+ config AT32AP700X_WDT
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -2,6 +2,10 @@
+ # Makefile for the WatchDog device drivers.
+ #
+ 
++# The WatchDog Timer Driver Core.
++watchdog-objs	+= watchdog_core.o watchdog_dev.o
++obj-$(CONFIG_WATCHDOG_CORE)	+= watchdog.o
++
+ # Only one watchdog can succeed. We probe the ISA/PCI/USB based
+ # watchdog-cards first, then the architecture specific watchdog
+ # drivers and then the architecture independant "softdog" driver.
+@@ -49,6 +53,7 @@ obj-$(CONFIG_NUC900_WATCHDOG) += nuc900_wdt.o
+ obj-$(CONFIG_ADX_WATCHDOG) += adx_wdt.o
+ obj-$(CONFIG_TS72XX_WATCHDOG) += ts72xx_wdt.o
+ obj-$(CONFIG_IMX2_WDT) += imx2_wdt.o
++obj-$(CONFIG_P4A_WATCHDOG) += p4a_wdt.o
+ 
+ # AVR32 Architecture
+ obj-$(CONFIG_AT32AP700X_WDT) += at32ap700x_wdt.o
