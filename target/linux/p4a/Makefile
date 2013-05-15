@@ -12,7 +12,6 @@ BOARDNAME:=Innofidei p4a
 FEATURES:=squashfs
 
 LINUX_VERSION:=2.6.37.1
-KERNELNAME:="uImage"
 
 define Target/Description
 	Build firmware images for Innofidei P4A based routers

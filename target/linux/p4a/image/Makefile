@@ -24,17 +24,13 @@ UBINIZE_OPTS = -m 2048 -p 128KiB -s 512
 #endef
 
 define Image/BuildKernel
-	$(TARGET_CROSS)objcopy -O binary -R .note -R .comment -S $(LINUX_DIR)/arch/arm/boot/compressed/vmlinux linux.bin
-	mkimage -A arm -O linux -T kernel -C none -a 00008000 -e 00008000 -n "OpenWRT Kernel Image p4abu" -d linux.bin uImage
-
-	mv uImage $(BIN_DIR)/$(IMG_PREFIX)-$(KERNEL)-uImage
-	rm linux.bin
+	cp $(LINUX_DIR)/arch/arm/boot/zImage $(BIN_DIR)/$(IMG_PREFIX)-$(KERNEL)-zImage
 endef
 
 define Image/Build/Profile/p4abu
 	$(STAGING_DIR_HOST)/bin/mkinnofideifw	\
 		-B p4abu -M "innofidei inc."		\
-		-P kernel=$(BIN_DIR)/$(IMG_PREFIX)-$(KERNEL)-uImage -A $(PAGESIZE)	\
+		-P kernel=$(BIN_DIR)/$(IMG_PREFIX)-$(KERNEL)-zImage -A $(PAGESIZE)	\
 		-P rootfs=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -A $(PAGESIZE)	\
 		-O $(BIN_DIR)/$(IMG_PREFIX)-p4abu-kernel-$(1)-sysupgrade.bin
 
