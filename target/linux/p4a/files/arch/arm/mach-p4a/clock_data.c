@@ -291,82 +291,117 @@ static const struct clksel peri_source_clksel[] = {
 	{.parent = NULL},
 };
 
+static const struct clksel sdiom_source_clksel[] = {
+	{.parent = &clk_pll1, .val = 0x0},
+	{.parent = &clk_pll2, .val = 0x1},
+	{.parent = NULL},
+};
+
+/* Notes :
+ * xxxCLK_DIVCOEF in P4A document, the highest bit use to change dividor to valid by invert its value,
+ * so actually dividor value should omit its highest bit.
+ *
+ * For Example, the AXI_REFCLK_DIVCOEF field in PMU_CLKRST2_REG:
+ *      Field Name	                 Field         Description
+ *      AXI_REFCLK_DIVCOEF           19-15         Axi_ref_clk dividor coef
+ *
+ * read Axi_ref_clk dividor should be (bit[18:15] + 1), just omit bit19 here.
+ *
+ */
 static const struct clkdiv axi_ref_clkdiv = {
 	.clkdiv_reg	= PMU_CLKRST2_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 15,
 };
 
 static const struct clkdiv peri_ref_clkdiv = {
 	.clkdiv_reg	= PMU_CLKRST2_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 25,
 };
 
-static const struct clkdiv arm_ref_clkdiv = {
+static const struct clkdiv sdiom_ref_clkdiv = {
+	.clkdiv_reg	= PMU_CLKRST4_REG,
+	.mask	= 0x0f,
+	.shift	= 17,
+};
+
+static const struct clkdiv arm1_ref_clkdiv = {
 	.clkdiv_reg	= PMU_CLKRST2_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 5,
 };
 
 static const struct clkdiv arm2_ref_clkdiv = {
 	.clkdiv_reg	= PMU_CLKRST5_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 0,
 };
 
-static const struct clkdiv arm_axi_clkdiv = {
+static const struct clkdiv arm1_axi_clkdiv = {
 	.clkdiv_reg	= GBL_CFG_ARM_CLK_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 4,
 };
 
-static const struct clkdiv arm_hclk_clkdiv = {
+static const struct clkdiv arm1_hclk_clkdiv = {
 	.clkdiv_reg	= GBL_CFG_ARM_CLK_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 12,
 };
 
 static const struct clkdiv arm2_axi_clkdiv = {
 	.clkdiv_reg	= GBL_CFG_ARM2_CLK_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 8,
 };
 
 static const struct clkdiv arm2_hclk_clkdiv = {
 	.clkdiv_reg	= GBL_CFG_ARM2_CLK_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 16,
 };
 
 static const struct clkdiv hclk_clkdiv = {
 	.clkdiv_reg	= GBL_CFG_BUS_CLK_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 0,
 
 };
 
+static const struct clkdiv sdiom1_clk_clkdiv = {
+	.clkdiv_reg	= GBL_CFG_BUS_CLK_REG,
+	.mask	= 0x0f,
+	.shift	= 24,
+};
+
+static const struct clkdiv sdiom2_clk_clkdiv = {
+	.clkdiv_reg	= GBL_CFG_PERI2_CLK_REG,
+	.mask	= 0x0f,
+	.shift	= 0,
+};
+
 static const struct clkdiv dma_aclk_clkdiv = {
 	.clkdiv_reg	= GBL_CFG_PERI_CLK_REG, 
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 24,
 };
 
 static const struct clkdiv spim_clkdiv = {
 	.clkdiv_reg	= GBL_CFG_PERI_CLK_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 16,
 };
 
 static const struct clkdiv spim2_clkdiv = {
 	.clkdiv_reg	= GBL_CFG_PERI2_CLK_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 8,
 };
 
 static const struct clkdiv timer_clkdiv = {
 	.clkdiv_reg	= GBL_CFG_PERI_CLK_REG,
-	.mask	= 0x1f,
+	.mask	= 0x0f,
 	.shift	= 8,
 };
 
@@ -379,29 +414,44 @@ static struct clk clk_sys_in = {
 
 /* PLL 1 ~ 3 */
 static struct clk clk_pll1 = {
-	.name	= "PLL1",
-	.parent	= &clk_sys_in,
+	.name		= "PLL1",
+	.parent		= &clk_sys_in,
 	.clkpll_reg	= PMU_PLL1_CTRL_REG,
-	.calcrate = p4a_clkpll_calcrate,
+	.calcrate	= p4a_clkpll_calcrate,
 };
 
 static struct clk clk_pll2 = {
-	.name	= "PLL2",
-	.parent	= &clk_sys_in,
+	.name		= "PLL2",
+	.parent		= &clk_sys_in,
 	.clkpll_reg	= PMU_PLL2_CTRL_REG,
-	.calcrate = p4a_clkpll_calcrate,
+	.calcrate	= p4a_clkpll_calcrate,
 };
 
 static struct clk clk_pll3 = {
-	.name	= "PLL3",
-	.parent	= &clk_sys_in,
+	.name		= "PLL3",
+	.parent		= &clk_sys_in,
 	.clkpll_reg	= PMU_PLL3_CTRL_REG,
-	.calcrate = p4a_clkpll_calcrate,
+	.calcrate	= p4a_clkpll_calcrate,
+};
+
+/* ARM_REF Clock */
+static struct clk clk_arm1_ref = {
+	.name			= "ARM1_REF",
+
+	/* clock selector */
+	.clksel_reg		= PMU_CLKRST3_REG,
+	.clksel_mask	= (0x7 << 16),     //bit18:16
+	.clksel			= arm_source_clksel,
+
+	/* clock dividor */
+	.clkdiv			= &arm1_ref_clkdiv,
+
+	.calcrate		= p4a_clkdiv_calcrate,
 };
 
 /* ARM2_REF Clock */
 static struct clk clk_arm2_ref = {
-	.name		= "ARM2_REF",
+	.name			= "ARM2_REF",
 
 	/* clock selector */
 	.clksel_reg		= PMU_CLKRST5_REG,
@@ -409,14 +459,14 @@ static struct clk clk_arm2_ref = {
 	.clksel			= arm_source_clksel, 
 
 	/* clock dividor */
-	.clkdiv	= &arm2_ref_clkdiv,
+	.clkdiv			= &arm2_ref_clkdiv,
 
-	.calcrate	= p4a_clkdiv_calcrate,
+	.calcrate		= p4a_clkdiv_calcrate,
 };
 
 /* PERI_REF Clock */
 static struct clk clk_peri_ref = {
-	.name = "PERI_REF",
+	.name			= "PERI_REF",
 
 	/* clock selector */
 	.clksel_reg		= PMU_CLKRST3_REG,
@@ -458,84 +508,147 @@ static struct clk clk_axi_ref = {
 
 /* SDIOM_REF Clock */
 static struct clk clk_sdiom_ref = {
-	.name	= "sdiom_ref_clk",
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
-	.clken_reg	= PMU_CLKRST1_REG,
-	.clken_bit	= (0x1 << 18),
+	.name			= "SDIOM_REF",
+
+	/* clock selector */
+	.clksel_reg		= PMU_CLKRST4_REG,
+	.clksel_mask	= (0x3 << 15),		//bit16:15
+	.clksel			= sdiom_source_clksel,
+
+	/* clock gating */
+	.enable			= p4a_set_clken_and_softreset,
+	.disable		= p4a_clear_clken_and_softreset,
+	.clken_reg		= PMU_CLKRST1_REG,
+	.clken_bit		= (0x1 << 18),
+
+	/* clock dividor */
+	.clkdiv			= &sdiom_ref_clkdiv,
+
+	.calcrate		= p4a_clkdiv_calcrate,
 };
 
-#if 0
-/* ARM2_AXI Clock */
-static struct clk clk_arm2_axi = {
-	.name	= "arm2_axi_clk",
-	.parent	= &clk_arm2_ref,
-	.clkdiv	= &arm2_axi_clkdiv,
+
+/* ARM1 Clock */
+static struct clk clk_arm1 = {
+	.name		= "arm1_clk",
+	.parent		= &clk_arm1_ref,
+	.calcrate	= p4a_followparent_calcrate,
+};
+
+/* ARM1 HCLK  Clock */
+static struct clk clk_arm1_hclk = {
+	.name		= "arm1_hclk",
+	.parent		= &clk_arm1_ref,
+	.clkdiv		= &arm1_axi_clkdiv,
+	.clkdiv2	= &arm1_hclk_clkdiv,
 	.calcrate	= p4a_clkdiv_calcrate,
 };
 
+/* ARM1_AXI Clock */
+static struct clk clk_arm1_axi = {
+	.name		= "arm1_axi_clk",
+	.parent		= &clk_arm1_ref,
+	.clkdiv		= &arm1_axi_clkdiv,
+	.calcrate   = p4a_clkdiv_calcrate,
+};
+
+
 /* ARM2 Clock */
 static struct clk clk_arm2 = {
-	.name	= "arm2_clk",
-	.parent	= &clk_arm2_ref,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
-	.clken_reg	= GBL_CFG_ARM_CLK_REG,
-	.clken_bit	= (0x1 << 1),
+	.name		= "arm2_clk",
+	.parent		= &clk_arm2_ref,
+	.calcrate	= p4a_followparent_calcrate,
 };
-#endif
 
 /* ARM2_HCLK  Clock */
 static struct clk clk_arm2_hclk = {
-	.name	= "arm2_hclk",
-	.parent	= &clk_arm2_ref,
+	.name		= "arm2_hclk",
+	.parent		= &clk_arm2_ref,
 	.clkdiv		= &arm2_axi_clkdiv,
 	.clkdiv2	= &arm2_hclk_clkdiv,
 	.calcrate	= p4a_clkdiv_calcrate,
 };
 
+/* ARM2_AXI Clock */
+static struct clk clk_arm2_axi = {
+	.name		= "arm2_axi_clk",
+	.parent		= &clk_arm2_ref,
+	.clkdiv		= &arm2_axi_clkdiv,
+	.calcrate	= p4a_clkdiv_calcrate,
+};
+
+
 static struct clk clk_hclk_div_clk_1 = {
-	.name	= "hclk_div_clk_1",
-	.parent	= &clk_axi_ref,
-	.clkdiv	= &hclk_clkdiv,
+	.name		= "hclk_div_clk_1",
+	.parent		= &clk_axi_ref,
+	.clkdiv		= &hclk_clkdiv,
 	.calcrate	= p4a_clkdiv_calcrate,
 };
 
 static struct clk clk_hclk = {
-	.name	= "hclk",
-	.parent	= &clk_hclk_div_clk_1,
+	.name		= "hclk",
+	.parent		= &clk_hclk_div_clk_1,
 	.calcrate	= p4a_followparent_calcrate,
 };
 
+static struct clk clk_nand = {
+	.name		= "nand_hclk",
+	.parent		= &clk_hclk_div_clk_1,
+	.calcrate	= p4a_followparent_calcrate,
 
-static struct clk clk_usbphy_clk = {	/* actually no exists */
-	.name	= "usb1_phy",
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
+	.clken_reg	= GBL_CFG_BUS_CLK_REG,
+	.clken_bit	= (0x1 << 16),
+	.modrst_reg	= GBL_CFG_SOFTRST_REG,
+	.modrst_bit = (0x1 << 10),
+};
+
+static struct clk clk_eth_hclk = {
+	.name		= "eth_hclk",
+	.parent		= &clk_hclk_div_clk_1,
+	.calcrate	= p4a_followparent_calcrate,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
+	.clken_reg	= GBL_CFG_BUS_CLK_REG,
+	.clken_bit	= (0x1 << 15),
+	.modrst_reg	= GBL_CFG_SOFTRST_REG,
+	.modrst_bit = (0x1 << 5),
+};
+
+static struct clk clk_uart4w = {
+	.name		= "UART4W",
+	.parent		= &clk_hclk_div_clk_1,
+
+	.calcrate	= p4a_followparent_calcrate,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
+	.clken_reg	= GBL_CFG_PERI_CLK_REG,
+	.clken_bit	= (0x1 << 5),
+	.modrst_reg	= GBL_CFG_SOFTRST_REG,
+	.modrst_bit = (0x1 << 26),
 };
 
 static struct clk clk_usb_hclk = {	/* ULPI USB */
-	.name	= "usb_hclk",
-	.parent	= &clk_hclk_div_clk_1,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
+	.name		= "usb_hclk",
+	.parent		= &clk_hclk_div_clk_1,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
 	.clken_reg	= GBL_CFG_BUS_CLK_REG,
 	.clken_bit	= (0x1 << 14),
 	.modrst_reg	= GBL_CFG_SOFTRST_REG,
 	.modrst_bit = (0x1 << 4),
 };
 
-static struct clk clk_usb2phy_clk = {
-	.name	= "usb2_phy",
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
-	.clken_reg	= PMU_CLKRST1_REG,
-	.clken_bit	= (0x1 << 1),
-};
-
 static struct clk clk_usb2_hclk = {		/* UTMI USB */
-	.name	= "usb2_hclk",
-	.parent	= &clk_hclk_div_clk_1,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
+	.name		= "usb2_hclk",
+	.parent		= &clk_hclk_div_clk_1,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
 	.clken_reg	= GBL_CFG_BUS_CLK_REG,
 	.clken_bit	= (0x1 << 9),
 	.modrst_reg	= GBL_CFG_SOFTRST_REG,
@@ -543,197 +656,227 @@ static struct clk clk_usb2_hclk = {		/* UTMI USB */
 };
 
 static struct clk clk_sdiom1_hclk = {
-	.name	= "sdiom1_hclk",
-	.parent	= &clk_hclk_div_clk_1,
+	.name		= "sdiom1_hclk",
+	.parent		= &clk_hclk_div_clk_1,
+
 	.calcrate	= p4a_followparent_calcrate,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
+	.clken_reg	= GBL_CFG_BUS_CLK_REG,
+	.clken_bit	= (0x1 << 30),
 };
 
 static struct clk clk_sdiom2_hclk = {
-	.name	= "sdiom2_hclk",
-	.parent	= &clk_hclk_div_clk_1,
+	.name		= "sdiom2_hclk",
+	.parent		= &clk_hclk_div_clk_1,
 	.calcrate	= p4a_followparent_calcrate,
-};
 
-static struct clk clk_sdiom1 = {
-	.name	= "sdiom1_clk",
-	.parent	= &clk_sdiom_ref,
-	.calcrate	= p4a_followparent_calcrate,
-	.enable = p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
-	.clken_reg = GBL_CFG_BUS_CLK_REG, 
-	.clken_bit	= (0x3 << 29),
-	.modrst_reg	= GBL_CFG_SOFTRST_REG,
-	.modrst_bit = (0x1 << 8),
-};
-
-static struct clk clk_sdiom2 = {
-	.name	= "sdiom2_clk",
-	.parent	= &clk_sdiom_ref,
-	.calcrate	= p4a_followparent_calcrate,
-	.enable = p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
-	.clken_reg = GBL_CFG_PERI2_CLK_REG, 
-	.clken_bit	= (0x3 << 5),
-	.modrst_reg	= GBL_ARM_RST_REG,
-	.modrst_bit = (0x1 << 19),
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
+	.clken_reg	= GBL_CFG_PERI2_CLK_REG,
+	.clken_bit	= (0x1 << 6),
 };
 
 static struct clk clk_spim1_hclk = {
-	.name	= "spim1_hclk",
-	.parent	= &clk_hclk_div_clk_1,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
+	.name		= "spim1_hclk",
+	.parent		= &clk_hclk_div_clk_1,
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
 	.clken_reg	= GBL_CFG_BUS_CLK_REG,
 	.clken_bit	= (0x1 << 18),
 };
 
 static struct clk clk_spim2_hclk = {
-	.name	= "spim2_hclk",
-	.parent	= &clk_hclk_div_clk_1,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
+	.name		= "spim2_hclk",
+	.parent		= &clk_hclk_div_clk_1,
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
 	.clken_reg	= GBL_CFG_BUS_CLK_REG,
 	.clken_bit	= (0x1 << 19),
 };
 
+
+static struct clk clk_sdiom1 = {
+	.name		= "sdiom1_clk",
+	.parent		= &clk_sdiom_ref,
+
+	.clkdiv		= &sdiom1_clk_clkdiv,
+	.calcrate	= p4a_clkdiv_calcrate,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
+	.clken_reg	= GBL_CFG_BUS_CLK_REG,
+	.clken_bit	= (0x1 << 29),
+	.modrst_reg	= GBL_CFG_SOFTRST_REG,
+	.modrst_bit	= (0x1 << 8),
+};
+
+static struct clk clk_sdiom2 = {
+	.name		= "sdiom2_clk",
+	.parent		= &clk_sdiom_ref,
+
+	.clkdiv		= &sdiom2_clk_clkdiv,
+	.calcrate	= p4a_clkdiv_calcrate,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
+	.clken_reg	= GBL_CFG_PERI2_CLK_REG,
+	.clken_bit	= (0x1 << 5),
+	.modrst_reg	= GBL_ARM_RST_REG,
+	.modrst_bit = (0x1 << 19),
+};
+
+
 static struct clk clk_spim1 = {
-	.name	= "spim1_clk",
-	.parent	= &clk_peri_ref,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
+	.name		= "spim1_clk",
+	.parent		= &clk_peri_ref,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
 	.clken_reg	= GBL_CFG_PERI_CLK_REG,
 	.clken_bit	= (0x1 << 23),
-	.clkdiv	= &spim_clkdiv,
+
+	.clkdiv		= &spim_clkdiv,
 	.calcrate	= p4a_clkdiv_calcrate,
 };
 
 static struct clk clk_spim2 = {
-	.name	= "spim2_clk",
-	.parent	= &clk_peri_ref,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
+	.name		= "spim2_clk",
+	.parent		= &clk_peri_ref,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
 	.clken_reg	= GBL_CFG_PERI2_CLK_REG,
 	.clken_bit	= (0x1 << 13),
-	.clkdiv	= &spim2_clkdiv,
+
+	.clkdiv		= &spim2_clkdiv,
 	.calcrate	= p4a_clkdiv_calcrate,
 };
 
-static struct clk clk_eth_hclk = {
-	.name	= "eth_hclk",
-	.parent	= &clk_hclk_div_clk_1,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
-	.clken_reg	= GBL_CFG_BUS_CLK_REG,
-	.clken_bit	= (0x1 << 15),
-	.modrst_reg	= GBL_CFG_SOFTRST_REG,
-	.modrst_bit = (0x1 << 5),
-};
-
 static struct clk clk_uart = {
-	.name	= "UART",
-	.parent	= &clk_peri_ref,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
+	.name		= "UART",
+	.parent		= &clk_peri_ref,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
 	.clken_reg	= GBL_CFG_PERI_CLK_REG,
 	.clken_bit	= (0x1 << 7),
-	.clkdiv	= &timer_clkdiv,		// uart dividor same as timer
+
+	.clkdiv		= &timer_clkdiv,		// uart dividor same as timer
 	.calcrate	= p4a_clkdiv_calcrate,
 };
 
 static struct clk clk_uart1 = {
-	.name	= "UART1",
-	.parent	= &clk_uart,
+	.name		= "UART1",
+	.parent		= &clk_uart,
 	.calcrate	= p4a_followparent_calcrate,
 };
 
 static struct clk clk_uart2 = {
-	.name	= "UART2",
-	.parent	= &clk_uart,
+	.name		= "UART2",
+	.parent		= &clk_uart,
 	.calcrate	= p4a_followparent_calcrate,
-};
-
-static struct clk clk_uart4w = {
-	.name	= "UART4W",
-	.parent	= &clk_hclk,
-	.calcrate	= p4a_followparent_calcrate,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
-	.clken_reg	= GBL_CFG_PERI_CLK_REG,
-	.clken_bit	= (0x1 << 5),
-	.modrst_reg	= GBL_CFG_SOFTRST_REG,
-	.modrst_bit = (0x1 << 26),
 };
 
 static struct clk clk_i2c = {
-	.name	= "I2C",
-	.parent	= &clk_peri_ref,
-	.clkdiv	= &timer_clkdiv,		// i2c dividor same as timer
+	.name		= "I2C",
+	.parent		= &clk_peri_ref,
+	.clkdiv		= &timer_clkdiv,		// i2c dividor same as timer
 	.calcrate	= p4a_clkdiv_calcrate,
 };
 
 static struct clk clk_i2c1 = {
-	.name	= "I2C Master1",
-	.parent	= &clk_i2c,
+	.name		= "I2CM1",
+	.parent		= &clk_i2c,
 	.calcrate	= p4a_followparent_calcrate,
 };
 
 static struct clk clk_i2c2 = {
-	.name	= "I2C Master2",
-	.parent	= &clk_i2c,
+	.name		= "I2CM2",
+	.parent		= &clk_i2c,
 	.calcrate	= p4a_followparent_calcrate,
 };
 
 static struct clk clk_timer = {
-	.name	= "timer1and2",
-	.parent	= &clk_peri_ref,
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
+	.name		= "timer",
+	.parent		= &clk_peri_ref,
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
 	.clken_reg	= GBL_CFG_PERI_CLK_REG,
 	.clken_bit	= (0x1 << 15),
-	.clkdiv	= &timer_clkdiv,
+
+	.clkdiv		= &timer_clkdiv,
 	.calcrate	= p4a_clkdiv_calcrate,
 };
 
+static struct clk clk_peri_timer = {
+	.name		= "peri_timer_clk",
+	.parent		= &clk_timer,
+	.calcrate	= p4a_followparent_calcrate,
+};
+
 static struct clk clk_p4timer = {
-	.name	= "p4timer_clk",
-#ifdef CONFIG_P4A_CPU2
-	.parent	= &clk_arm2_hclk,
-#elif defined(CONFIG_P4A_CPU1)
-	.parent	= &clk_arm_hclk,
-#endif
+	.name		= "p4timer_clk",
+	.parent		= &clk_timer,
 	.calcrate	= p4a_followparent_calcrate,
 };
 
 static struct clk clk_wdt= {
-	.name	= "watchdog",
-	.parent	= &clk_peri_ref,
-	.calcrate	= p4a_followparent_calcrate,
+	.name		= "watchdog",
+	.parent		= &clk_peri_ref,
+	.clkdiv		= &timer_clkdiv,		// wdt dividor same as timer
+	.calcrate	= p4a_clkdiv_calcrate,
 };
 
 static struct clk clk_mbox = {
-	.name	= "mailbox",
-	.enable	= p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
+	.name		= "mailbox",
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
 	.clken_reg	= GBL_CFG_PERI_CLK_REG,
 	.clken_bit	= (0x1 << 6),
 	.modrst_reg	= GBL_CFG_SOFTRST_REG,
 	.modrst_bit = (0x1 << 7),
 };
 
-static struct clk clk_nand = {
-	.name	= "nand_hclk",
-	.parent	= &clk_hclk_div_clk_1,
-	.enable = p4a_set_clken_and_softreset,
-	.disable = p4a_clear_clken_and_softreset,
-	.clken_reg	= GBL_CFG_BUS_CLK_REG,
-	.clken_bit	= (0x1 << 16),
-	.modrst_reg	= GBL_CFG_SOFTRST_REG,
-	.modrst_bit = (0x1 << 10),
+static struct clk clk_usbphy_clk = {	/* actually no exists */
+	.name	= "usb1_phy",
 };
 
+static struct clk clk_usb2phy_clk = {
+	.name		= "usb2_phy",
+
+	.enable		= p4a_set_clken_and_softreset,
+	.disable	= p4a_clear_clken_and_softreset,
+	.clken_reg	= PMU_CLKRST1_REG,
+	.clken_bit	= (0x1 << 1),
+};
+
+
+
 static struct clk_lookup p4a_clks[] = {
-	INIT_CLKREG(&clk_timer, NULL, "TIMER_CLK"),
-	INIT_CLKREG(&clk_p4timer, NULL, "P4TIMER_CLK"),
+	INIT_CLKREG(&clk_sys_in, NULL, "SYSIN"),
+	INIT_CLKREG(&clk_pll1, NULL, "PLL1"),
+	INIT_CLKREG(&clk_pll2, NULL, "PLL2"),
+	INIT_CLKREG(&clk_pll3, NULL, "PLL3"),
+	INIT_CLKREG(&clk_arm1_ref, NULL, "ARM1_REF"),
+	INIT_CLKREG(&clk_arm2_ref, NULL, "ARM2_REF"),
+	INIT_CLKREG(&clk_peri_ref, NULL, "PERI_REF"),
+	INIT_CLKREG(&clk_axi_ref, NULL, "AXI_REF"),
+	INIT_CLKREG(&clk_sdiom_ref, NULL, "SDIOM_REF"),
+	INIT_CLKREG(&clk_arm1, NULL, "ARM1"),
+	INIT_CLKREG(&clk_arm1_hclk, NULL, "ARM1_HCLK"),
+	INIT_CLKREG(&clk_arm1_axi, NULL, "ARM1_AXI"),
+	INIT_CLKREG(&clk_arm1, NULL, "ARM1"),
+	INIT_CLKREG(&clk_arm2, NULL, "ARM2"),
+	INIT_CLKREG(&clk_arm2_hclk, NULL, "ARM2_HCLK"),
+	INIT_CLKREG(&clk_arm2_axi, NULL, "ARM2_AXI"),
+	INIT_CLKREG(&clk_hclk, NULL, "HCLK"),
+
+	INIT_CLKREG(&clk_peri_timer, NULL, "TIMER_CLK"),		/* the timer 1 & 2 in peripheral registers */
+	INIT_CLKREG(&clk_p4timer, NULL, "P4TIMER_CLK"),		/* A8 Timer */
 	INIT_CLKREG(&clk_wdt, "p4a-wdt", "WDT_CLK"),
 	INIT_CLKREG(&clk_uart1, "p4a-uart.0", NULL),
 	INIT_CLKREG(&clk_uart2, "p4a-uart.1", NULL),
@@ -747,13 +890,14 @@ static struct clk_lookup p4a_clks[] = {
 	INIT_CLKREG(&clk_spim2_hclk, "p4a-spi.1","SPI_HCLK"),
 	INIT_CLKREG(&clk_eth_hclk, "p4a-ether", NULL),
 	INIT_CLKREG(&clk_nand, "p4a-nand", NULL),
-	INIT_CLKREG(&clk_sdiom1, "p4a-sdhci.0", NULL),
-	INIT_CLKREG(&clk_sdiom2, "p4a-sdhci.1", NULL),
+	INIT_CLKREG(&clk_sdiom1, "p4a-sdhci.0", "SD_CLK"),
+	INIT_CLKREG(&clk_sdiom1_hclk, "p4a-sdhci.0", "SD_HCLK"),
+	INIT_CLKREG(&clk_sdiom2, "p4a-sdhci.1", "SD_CLK"),
+	INIT_CLKREG(&clk_sdiom2_hclk, "p4a-sdhci.1", "SD_HCLK"),
 	INIT_CLKREG(&clk_usb_hclk, "musb_hdrc.0", "USB_CLK"),
 	INIT_CLKREG(&clk_usbphy_clk, "musb_hdrc.0", "USB_PHY_CLK"),
 	INIT_CLKREG(&clk_usb2_hclk, "musb_hdrc.1", "USB_CLK"),
 	INIT_CLKREG(&clk_usb2phy_clk, "musb_hdrc.1", "USB_PHY_CLK"),
-
 };
 #endif
 
