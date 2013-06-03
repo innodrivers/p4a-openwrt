@@ -1,6 +1,6 @@
 --- a/drivers/serial/Kconfig
 +++ b/drivers/serial/Kconfig
-@@ -660,6 +660,29 @@ config SERIAL_MPSC_CONSOLE
+@@ -660,6 +660,33 @@ config SERIAL_MPSC_CONSOLE
  	help
  	  Say Y here if you want to support a serial console on a Marvell MPSC.
  
@@ -26,6 +26,10 @@
 +	select SERIAL_CORE
 +	help
 +	  This is mailbox based serial driver on innofidei P4A platform.
++
++config MAILBOX_SERIAL_P4A_NRPORTS
++	int "Number of virtual serial ports" if MAILBOX_SERIAL_P4A
++	default 2
 +
  config SERIAL_PXA
  	bool "PXA serial port support"
