@@ -24,15 +24,15 @@ UBINIZE_OPTS = -m 2048 -p 128KiB -s 512
 #endef
 
 define Image/BuildKernel
-	cp $(LINUX_DIR)/arch/arm/boot/zImage $(BIN_DIR)/$(IMG_PREFIX)-$(KERNEL)-zImage
+	cp $(LINUX_DIR)/arch/arm/boot/zImage $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-$(KERNEL)-zImage
 endef
 
-define Image/Build/Profile/p4abu
+define Image/Build/InnofideiFW
 	$(STAGING_DIR_HOST)/bin/mkinnofideifw	\
-		-B p4abu -M "innofidei inc."		\
-		-P kernel=$(BIN_DIR)/$(IMG_PREFIX)-$(KERNEL)-zImage -A $(PAGESIZE)	\
-		-P rootfs=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -A $(PAGESIZE)	\
-		-O $(BIN_DIR)/$(IMG_PREFIX)-p4abu-kernel-$(1)-sysupgrade.bin
+		-B $(PROFILE) -M "innofidei inc."		\
+		-P kernel=$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-$(KERNEL)-zImage -A $(PAGESIZE)	\
+		-P rootfs=$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-root.$(1) -A $(PAGESIZE)	\
+		-O $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-kernel-$(1)-sysupgrade.bin
 
 endef
 
@@ -42,10 +42,9 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1))
-	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-root.$(1)
-	echo $(PROFILE)
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-root.$(1)
 
-	$(call Image/Build/Profile/$(PROFILE),$(1))
+	$(call Image/Build/InnofideiFW,$(1))
 endef
 
 $(eval $(call BuildImage))

@@ -11,7 +11,7 @@ define Profile/p4abu
 endef
 
 define Profile/p4abu/Description
-	Package set optimized for P4A bring-up board.
+	P4A bring-up board
 endef
 
 $(eval $(call Profile,p4abu))

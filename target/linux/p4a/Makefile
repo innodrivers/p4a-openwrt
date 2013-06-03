@@ -9,12 +9,14 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=p4a
 BOARDNAME:=Innofidei p4a
-FEATURES:=squashfs
+FEATURES:=squashfs jffs2 ubifs targz
+SUBTARGETS:=standalone dual
 
 LINUX_VERSION:=2.6.37.1
+CFLAGS:=-Os -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp
 
 define Target/Description
-	Build firmware images for Innofidei P4A based routers
+	Innofidei WarpDrive5100 (P4A).
 endef
 
 include $(INCLUDE_DIR)/target.mk
