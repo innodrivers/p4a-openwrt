@@ -25,6 +25,7 @@ define Image/BuildRecovery
 	cp ${LINUX_DIR}/.config $(TMP_DIR)/.config.before_build_recovery
 	cp ${LINUX_DIR}/arch/arm/boot/zImage $(TMP_DIR)/.zImage.before_build_recovery
 
+	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,cp recovery.init $(TARGET_DIR)/init)
 	echo 'CONFIG_BLK_DEV_INITRD=y' >> $(LINUX_DIR)/.config
 	echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(TARGET_DIR) $(INITRAMFS_EXTRA_FILES))"' >> $(LINUX_DIR)/.config
 	echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
@@ -37,6 +38,7 @@ define Image/BuildRecovery
 
 	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) ARCH="$(LINUX_KARCH)"
 	cp $(LINUX_DIR)/arch/arm/boot/zImage $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-recovery.img
+	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
 
 	mv $(TMP_DIR)/.zImage.before_build_recovery $(LINUX_DIR)/arch/arm/boot/zImage
 	mv $(TMP_DIR)/.config.before_build_recovery $(LINUX_DIR)/.config
